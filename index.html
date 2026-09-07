@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather-Cast | Prodesk IT</title>
+  
+ 
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* --- CSS STYLES --- */
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    body { background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    
+    .weather-card {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 450px;
+      text-align: center;
+    }
+    
+    .search-box { display: flex; gap: 12px; margin-bottom: 30px; }
+    .search-box input { flex: 1; padding: 12px 20px; border: none; border-radius: 50px; font-size: 16px; background: rgba(255, 255, 255, 0.7); outline: none; }
+    .search-box button { padding: 12px 25px; background-color: #2b5876; color: white; border: none; border-radius: 50px; cursor: pointer; font-size: 16px; font-weight: 600; }
+    .search-box button:hover { background-color: #1e3c50; }
+    
+    .weather-info h2 { font-size: 32px; color: #222; font-weight: 600; }
+    .weather-info img { width: 120px; height: 120px; margin: -10px 0; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.1)); }
+    .weather-info h1 { font-size: 64px; margin: 0; color: #111; font-weight: 600; }
+    .condition { font-size: 22px; color: #444; text-transform: capitalize; margin-bottom: 30px; }
+    
+    .details { display: flex; justify-content: space-around; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.6); }
+    .detail-box { text-align: center; }
+    .detail-label { font-size: 14px; color: #555; margin-bottom: 5px; }
+    .detail-value { font-size: 18px; font-weight: 600; color: #222; }
+    
+    .error-msg { background-color: #ffe0e0; color: #d8000c; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-weight: 600; }
+    .hidden { display: none !important; }
+    
+    .fade-in { animation: fadeIn 0.6s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  
+  <div class="weather-card">
+    <div class="search-box">
+      <input type="text" id="city-input" placeholder="Enter city name...">
+      <button id="search-btn">Search</button>
+    </div>
+
+    <div id="error-message" class="error-msg hidden">
+      City not found or API Key not active yet.
+    </div>
+
+    <div id="weather-info" class="weather-info hidden">
+      <h2 id="city-name">--</h2>
+      <img id="weather-icon" src="" alt="Weather icon">
+      <h1 id="temperature">--°C</h1>
+      <p id="condition" class="condition">--</p>
+      
+      <div class="details">
+        <div class="detail-box">
+          <p class="detail-label">Humidity</p>
+          <p class="detail-value"><span id="humidity">--</span>%</p>
+        </div>
+        <div class="detail-box">
+          <p class="detail-label">Wind Speed</p>
+          <p class="detail-value"><span id="wind-speed">--</span> km/h</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- --- JAVASCRIPT LOGIC --- -->
+  <script>
+    const API_KEY = "b636d5e3ba138f58bdde581747eca432"; 
+
+    const cityInput = document.getElementById("city-input");
+    const searchBtn = document.getElementById("search-btn");
+    const weatherInfo = document.getElementById("weather-info");
+    const errorMessage = document.getElementById("error-message");
+
+    const cityNameDisplay = document.getElementById("city-name");
+    const tempDisplay = document.getElementById("temperature");
+    const conditionDisplay = document.getElementById("condition");
+    const humidityDisplay = document.getElementById("humidity");
+    const windDisplay = document.getElementById("wind-speed");
+    const weatherIcon = document.getElementById("weather-icon");
+
+    async function fetchWeather(city) {
+      try {
+        errorMessage.classList.add("hidden");
+        weatherInfo.classList.remove("fade-in");
+
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error("API Error");
+        }
+
+        const data = await response.json();
+
+        cityNameDisplay.textContent = data.name;
+        tempDisplay.textContent = Math.round(data.main.temp) + "°C";
+        conditionDisplay.textContent = data.weather[0].description;
+        humidityDisplay.textContent = data.main.humidity;
+        windDisplay.textContent = Math.round(data.wind.speed * 3.6); 
+        
+        const iconCode = data.weather[0].icon;
+        weatherIcon.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+        weatherInfo.classList.remove("hidden");
+        
+        setTimeout(() => {
+          weatherInfo.classList.add("fade-in");
+        }, 10);
+
+      } catch (error) {
+        weatherInfo.classList.add("hidden");
+        errorMessage.classList.remove("hidden");
+        console.error("Fetch failed. Please check if your API key is fully activated.");
+      }
+    }
+
+    searchBtn.addEventListener("click", function() {
+      const city = cityInput.value.trim();
+      if (city !== "") fetchWeather(city);
+    });
+
+    cityInput.addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        const city = cityInput.value.trim();
+        if (city !== "") fetchWeather(city);
+      }
+    });
+
+    fetchWeather("Dehradun");
+  </script>
+</body>
+</html>
